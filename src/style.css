@@ -1,0 +1,27 @@
+:root{--bg:#f4f7f9;--card:#fff;--fg:#14232d;--mut:#5d7080;--acc:#0b6e99;--bd:#dbe4ea;--ok:#1b8a4b;--warn:#c0392b;
+ --c1:#0b6e99;--c2:#e0a100;--c3:#8e44ad;--c4:#1b8a4b}
+@media(prefers-color-scheme:dark){:root{--bg:#0e161c;--card:#17232c;--fg:#e8f0f5;--mut:#95a8b6;--acc:#4fb3e0;--bd:#2a3b47;--ok:#4cc882;--warn:#ff7b6b}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.4 system-ui,-apple-system,sans-serif;font-variant-numeric:tabular-nums;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
+#app{max-width:640px;margin:0 auto;padding:12px}
+h1{font-size:1.3rem;margin:.4rem 0}h2{font-size:1.05rem;margin:0 0 .6rem}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:14px;margin:12px 0}
+label{display:block;font-size:.85rem;color:var(--mut);margin:.5rem 0 .2rem}
+input,button,select{font:inherit;color:inherit}
+input{width:100%;padding:10px;border:1px solid var(--bd);border-radius:10px;background:var(--bg)}
+button{padding:9px 14px;border:1px solid var(--acc);background:transparent;color:var(--acc);border-radius:10px;cursor:pointer}
+button.pri{background:var(--acc);color:#fff}
+button.sm{padding:4px 10px;font-size:.85rem}
+.row{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--bd)}
+.row:last-child{border:0}.row b{white-space:nowrap}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.big{font-size:1.5rem;font-weight:700}
+.warn{color:var(--warn)}.ok{color:var(--ok)}.mut{color:var(--mut);font-size:.85rem}
+.bar{display:flex;height:22px;border-radius:8px;overflow:hidden;margin:8px 0}
+.leg i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px}
+table{width:100%;border-collapse:collapse;font-size:.82rem}th,td{padding:5px 3px;text-align:right;border-bottom:1px solid var(--bd)}
+th:first-child,td:first-child{text-align:left}tr.m{cursor:pointer}tr.sel{background:color-mix(in srgb,var(--acc) 15%,transparent)}tfoot td{font-weight:700}
+.scroll{overflow-x:auto}
+.chq{display:grid;grid-template-columns:1.2fr 1fr 1.3fr auto;gap:6px;margin:4px 0}
+pre{white-space:pre-wrap;font:inherit;margin:0}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}

@@ -1,0 +1,6 @@
+node_modules
+dist
+dev-dist
+src/seed.json
+compta-aquatic-shape-donnees.json
+cahier-des-charges-app-compta.md

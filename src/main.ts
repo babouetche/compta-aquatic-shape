@@ -20,7 +20,7 @@ const save = () => { m().maj = new Date().toISOString(); repo.save(data); };
 
 function shell() {
   app.innerHTML = `
-  <header class="brand"><img src="./logo.png" alt="Aquatic Shape Chartrons" width="320" height="320"><h1>Compta</h1></header>
+  <header class="brand"><img src="./logo.png" alt="Aquatic Shape Chartrons" width="899" height="280"><h1>Comptabilité</h1><p class="tag">Ton mois en quelques chiffres</p></header>
   <div class="card">
     <label>Mois de la redevance</label><input id="mois" type="month">
     <div class="grid2">

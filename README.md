@@ -22,6 +22,5 @@ Attention : les données sont locales à l'appareil/navigateur. Exporte réguli�
 ## Reste à faire
 - Adaptateur Google Sheets (OAuth) pour la synchro avec la conversation « compta » (§7).
 - Rattacher chaque règlement à son autofacture (AF-AAAA-MM) ; pour l'instant la référence est un champ texte par mois.
-- Icônes PNG sommaires (générées par `scripts/make-icons.mjs`) : à remplacer par un vrai logo.
 - Points ouverts du cahier §5 (données à vérifier, pas des bugs d'app).
 - Taux URSSAF modifiables dans l'UI mais non persistés : à revérifier chaque 1er janvier.

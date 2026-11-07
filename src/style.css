@@ -25,3 +25,4 @@ th:first-child,td:first-child{text-align:left}tr.m{cursor:pointer}tr.sel{backgro
 .chq{display:grid;grid-template-columns:1.2fr 1fr 1.3fr auto;gap:6px;margin:4px 0}
 pre{white-space:pre-wrap;font:inherit;margin:0}
 .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.brand{text-align:center}.brand img{width:min(260px,70%);height:auto;border-radius:14px;background:#fff}.brand h1{margin:.2rem 0}

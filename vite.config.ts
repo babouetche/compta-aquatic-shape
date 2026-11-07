@@ -6,7 +6,7 @@ export default defineConfig({
   plugins: [
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['icon.svg', 'icon-180.png'],
+      includeAssets: ['icon.svg', 'icon-180.png', 'logo.png'],
       manifest: {
         name: 'Compta Aquatic Shape', short_name: 'Compta AS', lang: 'fr', display: 'standalone',
         start_url: './', background_color: '#0b6e99', theme_color: '#0b6e99',

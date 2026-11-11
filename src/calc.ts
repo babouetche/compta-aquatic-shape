@@ -25,3 +25,47 @@ export function calcMois(caTTC: number, retroTTC: number, t: Taux = TAUX_2026): 
 export function ecartCA3(c: Calcul, ca3?: CA3): number | null {
   return ca3 ? c.tvaPay - ca3.net : null;
 }
+
+// ————————————————————————————————————————————————————————————————
+// EI au régime réel (BNC, déclaration contrôlée, impôt sur le revenu).
+// Plus de « Prestations de services BNC » ni de versement libératoire : les cotisations
+// sociales dépendent du BÉNÉFICE (recettes − charges) et sont prélevées par l'URSSAF selon
+// un échéancier provisionnel, régularisé l'année suivante. L'impôt passe par le prélèvement
+// à la source. Ici on calcule donc des PROVISIONS (sommes à mettre de côté), pas des montants
+// à déclarer. La TVA (CA3) est inchangée.
+// ————————————————————————————————————————————————————————————————
+export interface Charge { libelle: string; ht: number; tva: number }
+export interface OptsReel { tauxSocial: number; tauxPAS: number }
+/** tauxSocial ≈ 40-45 % du bénéfice pour un indépendant (estimation, modifiable). tauxPAS = ton taux de prélèvement à la source. */
+export const REEL_DEFAUT: OptsReel = { tauxSocial: 0.43, tauxPAS: 0 };
+
+export interface CalculReel extends Calcul {
+  mode: 'reel';
+  l20Retro: number; l20Autres: number;          // TVA déductible : piscine + autres achats
+  retroHT: number; chargesHT: number;           // chargesHT = rétro HT + autres charges HT
+  benefice: number;                             // recettes HT − charges HT (avant cotisations)
+  provSocial: number; provImpot: number;        // à mettre de côté
+}
+
+export function calcReel(caTTC: number, retroTTC: number, charges: Charge[] = [], o: OptsReel = REEL_DEFAUT): CalculReel {
+  const a1 = Math.round(caTTC / 1.2);
+  const tax08 = Math.round(a1 * 0.2);
+  const l20Retro = Math.round(retroTTC / 6);
+  const l20Autres = Math.round(charges.reduce((s, c) => s + (c.tva || 0), 0));
+  const l20 = l20Retro + l20Autres;
+  const tvaNette = tax08 - l20;
+  const tvaPay = Math.max(0, tvaNette);
+  const retroHT = retroTTC - l20Retro;
+  const autresHT = charges.reduce((s, c) => s + (c.ht || 0), 0);
+  const autresTTC = autresHT + charges.reduce((s, c) => s + (c.tva || 0), 0);
+  const chargesHT = retroHT + autresHT;
+  const benefice = a1 - chargesHT;
+  const provSocial = Math.max(0, benefice) * o.tauxSocial;
+  const provImpot = Math.max(0, benefice - provSocial) * o.tauxPAS; // cotisations déductibles du revenu imposable
+  return {
+    mode: 'reel', a1, tax08, l20, l20Retro, l20Autres, tvaNette, tvaPay, credit: tvaNette < 0,
+    urssaf: provSocial, urssafDetail: { cotisations: provSocial, liberatoire: 0, formation: 0 },
+    retroHT, chargesHT, benefice, provSocial, provImpot,
+    reste: caTTC - retroTTC - autresTTC - tvaPay - provSocial - provImpot,
+  };
+}

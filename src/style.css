@@ -115,3 +115,33 @@ tfoot td{font-weight:800;border:0;padding-top:12px}
 .chq button{background:transparent;color:var(--warn);font-size:1.1rem;opacity:.75}
 select{background-image:linear-gradient(45deg,transparent 50%,var(--mut) 50%),linear-gradient(135deg,var(--mut) 50%,transparent 50%);
   background-position:calc(100% - 20px) 50%,calc(100% - 14px) 50%;background-size:6px 6px;background-repeat:no-repeat}
+
+/* ——— EI au réel ——— */
+:root{--c5:#0ea5e9;--c6:#c2255c}
+@media(prefers-color-scheme:dark){:root{--c5:#5cc8f5;--c6:#f06595}}
+.chip{display:inline-block;margin-top:10px;padding:5px 12px;border-radius:99px;font:700 .75rem var(--disp);letter-spacing:.04em;color:var(--acc);background:var(--accs);border:1px solid color-mix(in srgb,var(--acc) 25%,transparent)}
+.brand .tag+p{margin:0}
+h3.sub{margin:18px 0 10px;font:700 .72rem var(--disp);letter-spacing:.12em;text-transform:uppercase;color:var(--mut)}
+.chg{display:grid;grid-template-columns:1fr 1fr 40px;grid-template-areas:"lib lib del" "ht tv del";gap:8px;padding:10px;margin:0 0 8px;border-radius:14px;background:var(--in)}
+.chg .lib{grid-area:lib}.chg .ht{grid-area:ht}.chg .tv{grid-area:tv}
+.chg input{background:var(--card)}
+.chg button{grid-area:del;align-self:stretch;padding:0;background:transparent;color:var(--warn);font-size:1.1rem;opacity:.75}
+
+/* Guide */
+.guide .n{background:linear-gradient(135deg,#7c5cff,var(--acc))}
+.gd{border-top:1px solid var(--bd)}
+.gd:first-of-type{border-top:0}
+.gd>summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:13px 2px;font:650 .98rem var(--disp)}
+.gd>summary::-webkit-details-marker{display:none}
+.gd>summary::after{content:"";flex:none;width:8px;height:8px;border-right:2px solid var(--mut);border-bottom:2px solid var(--mut);transform:rotate(45deg) translateY(-3px);transition:transform .2s}
+.gd[open]>summary::after{transform:rotate(225deg) translateY(-2px)}
+.gd>div{padding:0 2px 14px;font-size:.92rem;line-height:1.55}
+.gd p{margin:0 0 10px}.gd p:last-child{margin:0}
+.gd ul,.gd ol{margin:0 0 10px;padding-left:20px}.gd li{margin:0 0 7px}
+.gd b{color:var(--fg)}
+ul.cal,ul.opt{list-style:none;padding:0}
+ul.cal li,ul.opt li{padding:10px 12px;border-radius:12px;background:var(--in)}
+table.cmp{width:100%;margin:6px 0 12px;font-size:.8rem;border-collapse:separate;border-spacing:0}
+table.cmp th,table.cmp td{white-space:normal;text-align:left;vertical-align:top;padding:8px 6px}
+table.cmp th{font-size:.68rem}
+table.cmp td:first-child{font-weight:700;color:var(--mut);width:22%}

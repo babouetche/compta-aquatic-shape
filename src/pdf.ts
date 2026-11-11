@@ -5,7 +5,7 @@ import { e2, libMois, dateFr } from './format';
 
 // Texte du justificatif (utilisé pour l'aperçu et le PDF). Pas d'IBAN.
 export function justificatifLignes(k: string, m: Mois, c: Calcul, r: Reglages): string[] {
-  const ht = m.retroTTC - c.l20;
+  const ht = m.retroTTC - ((c as any).l20Retro ?? c.l20);
   const regl = m.cheques.map(q => `  Chèque n° ${q.num} — ${e2(q.montant)} — ${dateFr(q.date)}`);
   const totalRegl = m.cheques.reduce((s, q) => s + q.montant, 0);
   return [
@@ -19,7 +19,7 @@ export function justificatifLignes(k: string, m: Mois, c: Calcul, r: Reglages): 
     m.refFacture ? `Référence facture : ${m.refFacture}` : '',
     '',
     `Montant HT : ${e2(ht)}`,
-    `TVA : ${e2(c.l20)}`,
+    `TVA : ${e2(((c as any).l20Retro ?? c.l20))}`,
     `Montant TTC : ${e2(m.retroTTC)}`,
     '',
     'Règlements :',
@@ -27,7 +27,7 @@ export function justificatifLignes(k: string, m: Mois, c: Calcul, r: Reglages): 
     ...(m.compensation ? [`  Compensation — ${e2(m.compensation.montant)} — ${m.compensation.objet}`] : []),
     `Total chèques : ${e2(totalRegl)}`,
     '',
-    `TVA déduite sur la CA3 : ${e2(c.l20)} (ligne 20)`,
+    `TVA déduite sur la CA3 : ${e2(((c as any).l20Retro ?? c.l20))} (ligne 20)`,
   ].filter((l, i, a) => l !== '' || a[i - 1] !== '');
 }
 

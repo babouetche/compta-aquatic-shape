@@ -15,8 +15,11 @@ Dépôt public : aucune donnée perso. En local, un `src/seed.json` (ignoré par
 La PWA exige HTTPS : déploie `dist/` sur un hébergement statique (Netlify Drop, Cloudflare Pages, GitHub Pages), ouvre l'URL dans **Safari** → Partager → **Sur l'écran d'accueil**.
 Attention : les données sont locales à l'appareil/navigateur. Exporte régulièrement le JSON.
 
+## Régime
+Depuis janvier 2026 : **EI au réel** (BNC, déclaration contrôlée, IR). Les cotisations dépendent du bénéfice : l'app calcule des **provisions** (taux réglables), compare avec les prélèvements réels et fait le bilan de l'année (base de la 2035). Le régime et la date de passage se changent dans les réglages ; les mois d'avant sont calculés en micro. Guide complet dans l'app (carte « Guide : EI au réel »).
+
 ## Structure
-- `src/calc.ts` : formules du cahier §2 (ne pas modifier sans validation) · `tests/calc.test.ts`
+- `src/calc.ts` : formules micro (cahier §2) et réel (`calcReel`) · `src/regime.ts` : choix du régime par mois · `src/guide.ts` : guide · `tests/calc.test.ts`
 - `src/repository.ts` : stockage + import/normalisation · `src/pdf.ts` : justificatif · `src/main.ts` : UI
 
 ## Reste à faire

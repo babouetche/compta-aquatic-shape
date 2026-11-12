@@ -106,3 +106,36 @@ describe('régime par mois', () => {
     expect((calculMois('2026-11', { caTTC: 1200, retroTTC: 0, refFacture: '', cheques: [] }, r, TAUX_2026) as any).mode).toBe('reel');
   });
 });
+
+describe('règles validées le 12/11/2026', () => {
+  it('rétro due = 40 % de l\'encaissé TTC (= 40 % HT + TVA)', async () => {
+    const { retroDue } = await import('../src/calc');
+    expect(retroDue(3824.4)).toBe(1529.76);
+    expect(retroDue(3187 * 1.2)).toBeCloseTo(3187 * 0.4 * 1.2, 2);
+  });
+  it('autofacture numérotée par mois de règlement', async () => {
+    const { numAF } = await import('../src/calc');
+    expect(numAF('2026-10')).toBe('AF-2026-11');
+    expect(numAF('2026-12')).toBe('AF-2027-01');
+  });
+  it('TVA de la rétro déduite une seule fois, au mois du paiement', async () => {
+    const { calculMois } = await import('../src/regime');
+    const r = { structure: '', adresse: '' };
+    const tous: any = {
+      '2026-10': { caTTC: 3824.4, retroTTC: 1529.76, refFacture: '', cheques: [] },
+      '2026-11': { caTTC: 3600, retroTTC: 1440, refFacture: '', cheques: [] },
+      '2026-12': { caTTC: 3000, retroTTC: 1200, refFacture: '', cheques: [] },
+    };
+    const oct = calculMois('2026-10', tous['2026-10'], r, TAUX_2026, tous) as any;
+    const nov = calculMois('2026-11', tous['2026-11'], r, TAUX_2026, tous) as any;
+    const dec = calculMois('2026-12', tous['2026-12'], r, TAUX_2026, tous) as any;
+    expect(oct.l20Retro).toBe(255);   // AF-2026-11 déduite en octobre
+    expect(nov.l20Retro).toBe(0);     // donc rien en novembre
+    expect(dec.l20Retro).toBe(240);   // rétro de novembre (1 440 TTC) payée en décembre
+    expect(dec.retroHT).toBe(1000);   // la charge reste celle du mois
+  });
+  it('provision sociale par défaut = 29 % du bénéfice', () => {
+    const r = calcReel(1200, 0);
+    expect(r.provSocial).toBeCloseTo(290, 5);
+  });
+});

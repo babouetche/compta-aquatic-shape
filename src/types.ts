@@ -16,5 +16,8 @@ export interface Reglages {
   reelDepuis?: string;         // YYYY-MM, défaut 2026-01 ; les mois d'avant sont calculés en micro
   tauxSocial?: number;         // estimation cotisations / bénéfice (0,43 par défaut)
   tauxPAS?: number;            // taux de prélèvement à la source (impots.gouv)
+  siret?: string; ape?: string; tvaIntra?: string; // identité de l'EI (dans le JSON, jamais dans le dépôt)
+  urssafMensuel?: number;      // mensualité URSSAF à partir de 2027 (après modulation en janvier)
+  deducPaiementDepuis?: string; // YYYY-MM, défaut 2026-11 : TVA de la rétro déduite au mois de paiement
 }
 export interface Donnees { mois: Record<string, Mois>; reglages: Reglages; paiements?: Paiement[] }

@@ -29,19 +29,20 @@ export const GUIDE = [
 
   bloc('Ton calendrier de l\'année', `
     <ul class="cal">
-      <li><b>Chaque mois</b> · CA3 + paiement de la TVA · prélèvements URSSAF (le 5 ou le 20) · acompte d'impôt (le 15).</li>
+      <li><b>Chaque mois</b> · CA3 + paiement de la TVA <b>avant le 16</b> · rétrocession SCM (40 % de l'encaissé TTC, par virement) · mensualité URSSAF (dès janvier 2027) · acompte d'impôt (le 15).</li>
+      <li><b>Janvier 2027</b> · demander la <b>modulation</b> de ta mensualité URSSAF sur urssaf.fr selon ton revenu estimé.</li>
       <li><b>Début mai</b> · <b>liasse 2035</b> (bénéfice de l'année passée), déposée en ligne depuis ton espace pro, souvent via un logiciel ou un expert-comptable.</li>
       <li><b>Mai-juin</b> · <b>déclaration de revenus</b> (2042 + 2042-C-PRO) : tu reportes ton bénéfice BNC ; le volet social remplace l'ancienne DSI et sert à l'URSSAF.</li>
       <li><b>Été-automne</b> · l'URSSAF <b>régularise</b> l'année passée (remboursement ou rappel) et ajuste ton échéancier.</li>
       <li><b>Septembre</b> · nouveau taux de prélèvement à la source et acomptes recalculés.</li>
-      <li><b>15 décembre</b> · <b>CFE</b> (cotisation foncière des entreprises) sur impots.gouv.</li>
+      <li><b>CFE</b> · 2026 : 648 € prélevés le 16/12/2026. À partir de 2027 : <b>mensualisée</b> (prélèvement chaque mois dès le 15/01).</li>
     </ul>
     <p>Dates indicatives : vérifie chaque année le calendrier fiscal sur impots.gouv.fr et ton espace urssaf.fr.</p>`),
 
   bloc('Ce que tu peux déduire (charges)', `
     <p>Une dépense est déductible si elle est <b>engagée pour ton activité</b>, <b>payée</b> dans l'année (comptabilité de caisse en BNC) et <b>justifiée</b> par une facture.</p>
     <ul>
-      <li><b>Rétrocession</b> à la SCM (montant HT) — déjà prise en compte automatiquement.</li>
+      <li><b>Rétrocession</b> à la SCM (montant HT = 40 % du CA HT encaissé) — déjà prise en compte automatiquement.</li>
       <li><b>Matériel</b> : frites, planches, palmes, enceinte, maillots techniques… Au-delà de 500 € HT par objet durable, il s'amortit sur plusieurs années.</li>
       <li><b>Assurance RC pro</b>, cotisations à des syndicats ou fédérations, carte pro.</li>
       <li><b>Formations</b> et recyclages obligatoires (BNSSA, PSE1, révision du diplôme…).</li>
@@ -65,20 +66,21 @@ export const GUIDE = [
       <li><b>Revenir en micro</b> · possible si tu restes sous les seuils, sur option pour l'année suivante. À comparer : avec ~40 % de rétro, le réel est souvent plus favorable que l'abattement micro de 34 %.</li>
     </ul>`),
 
-  bloc('Points à régulariser pour 2026', `
-    <p>Tu es au réel depuis <b>janvier 2026</b>, alors que tes déclarations URSSAF de 2026 ont été faites en micro (« Prestations de services BNC », avec versement libératoire).</p>
+  bloc('Où en est 2026 (mis à jour le 12/11/2026)', `
+    <p>Tu es en <b>EI au réel</b> (BNC, déclaration contrôlée) depuis le <b>1<sup>er</sup> janvier 2026</b>.</p>
     <ul>
-      <li>Contacte l'<b>URSSAF</b> (messagerie de ton espace) pour faire basculer ton compte au réel et savoir comment sont repris les montants déjà versés.</li>
-      <li>Demande au <b>SIE de Bordeaux</b> comment sont imputés les <b>versements libératoires</b> déjà payés sur ton impôt 2026.</li>
-      <li>Ta <b>2035 pour 2026</b> sera à déposer en mai 2027 : rassemble dès maintenant toutes tes factures d'achat de 2026.</li>
-      <li>La TVA (CA3) n'est pas concernée : les écarts CA3 déjà repérés restent à vérifier séparément.</li>
-    </ul>
-    <p><b>À faire valider</b> par un expert-comptable : ces situations de changement de régime en cours de route ont des règles précises.</p>`),
+      <li><b>URSSAF 2026</b> : régularisée et <b>soldée</b>, 8 723 € au total (dernier prélèvement de 237 € le 03/12/2026). Plus de taux micro, plus rien à déclarer chaque mois. Le trop-payé éventuel sera régularisé en 2027 avec ta déclaration de revenus.</li>
+      <li><b>À partir du 01/01/2027</b> : mensualisation URSSAF. Modulation à faire en janvier, puis saisis la mensualité dans les réglages.</li>
+      <li><b>TVA de la rétro</b> : déduite <b>une seule fois</b>, en ligne 20, sur la CA3 du mois où tu paies la rétro. Celle de AF-2026-11 (254,96 €) a déjà été déduite en octobre : rien pour la rétro sur la CA3 de novembre.</li>
+      <li><b>Charges 2026</b> : index des charges déductibles (v2) dans le Drive, ≈ 23 514 € hors rétro de novembre.</li>
+      <li><b>Ta 2035 pour 2026</b> : au printemps 2027, via Indy.</li>
+      <li><b>Indy</b> : aucune modification sans ton accord explicite.</li>
+    </ul>`),
 
   bloc('Ce que l\'app calcule (et ses limites)', `
     <ul>
       <li><b>Bénéfice estimé</b> = recettes HT − rétro HT − autres charges HT. C'est une estimation mensuelle : le vrai bénéfice est celui de ta 2035.</li>
-      <li><b>Provision sociale</b> = bénéfice × taux réglable (43 % par défaut, ordre de grandeur des cotisations d'un indépendant). Ce n'est <b>pas</b> le montant que l'URSSAF prélève : compare avec « Prélevé par l'URSSAF ».</li>
+      <li><b>Provision sociale</b> = bénéfice × taux réglable (29 % par défaut, estimation validée le 12/11/2026). Ce n'est <b>pas</b> le montant que l'URSSAF prélève : compare avec « Prélevé par l'URSSAF ».</li>
       <li><b>Provision impôt</b> = (bénéfice − provision sociale) × ton taux de prélèvement à la source, à recopier depuis impots.gouv dans les réglages.</li>
       <li>Les mois avant ta date de passage au réel restent calculés en micro (URSSAF « Prestations BNC »).</li>
     </ul>

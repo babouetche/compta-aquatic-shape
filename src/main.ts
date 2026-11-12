@@ -2,6 +2,8 @@ import './style.css';
 import { ecartCA3, TAUX_2026, REEL_DEFAUT, type Taux, type CalculReel } from './calc';
 import { calculMois, estReel, regimeDe, REEL_DEPUIS_DEFAUT } from './regime';
 import { GUIDE } from './guide';
+import { renderPaiements } from './paiementsUI';
+import { normaliserPaiements } from './paiements';
 import { LocalRepository, normaliser, type Repository } from './repository';
 import type { Donnees, Mois } from './types';
 import { e0, e2, libCourt, dateFr } from './format';
@@ -75,6 +77,8 @@ const AIDE = {
 function shell() {
   app.innerHTML = `
   <header class="brand"><img src="./logo.png" alt="Aquatic Shape Chartrons" width="899" height="280"><h1>Comptabilité</h1><p class="tag">Mon mois en quelques chiffres</p><p><span class="chip" id="chip"></span></p></header>
+  <nav class="tabs" role="tablist"><button role="tab" data-tab="compta" aria-selected="true">Compta du mois</button><button role="tab" data-tab="paie" aria-selected="false">Paiements <span id="tabdue"></span></button></nav>
+  <div id="v-compta">
   <section class="card guide">${hd('i', 'Guide : EI au réel')}<p class="mut" style="margin:-4px 0 12px">Ce qui change, ce que tu fais chaque mois, ton calendrier, tes options. Touche une ligne pour la déplier.</p>${GUIDE}</section>
   <section class="card">${hd('€', 'Mon mois')}${aide(AIDE.saisie)}
     <div class="grid">
@@ -128,7 +132,10 @@ function shell() {
     </div>
     <div class="actions"><button id="exp">Exporter JSON</button><button id="imp">Importer JSON</button>
     <input id="file" type="file" accept="application/json" hidden></div>
-  </section>`;
+  </section>
+  </div>
+  <div id="v-paie" hidden></div>`;
+  app.querySelectorAll<HTMLElement>('[data-tab]').forEach(b => (b.onclick = () => onglet(b.dataset.tab!)));
   $('#mois').addEventListener('change', e => { cur = (e.target as HTMLInputElement).value || cur; charger(); });
   for (const id of ['ca', 'retro', 'ref', 'comp', 'compObj', 'compNet', 'c_a1', 'c_t08', 'c_ded', 'c_lig', 'c_net', 'r_payeur', 'r_struct', 'r_adr', 't_c', 't_l', 't_f', 'r_social', 'r_pas'])
     $('#' + id).addEventListener('input', lire);
@@ -349,9 +356,16 @@ function exporter() {
 async function importer(e: Event) {
   const f = (e.target as HTMLInputElement).files?.[0]; if (!f) return;
   try {
-    const d = normaliser(JSON.parse(await f.text()));
+    const j = JSON.parse(await f.text());
+    if (Array.isArray(j)) {
+      const ps = normaliserPaiements(j);
+      if (!confirm(`Remplacer le suivi des paiements par ce fichier (${ps.length} clientes) ? La compta n'est pas touchée.`)) return;
+      data.paiements = ps; await repo.save(data); paiements(); onglet('paie');
+      (e.target as HTMLInputElement).value = ''; return;
+    }
+    const d = normaliser(j);
     if (!confirm(`Remplacer toutes les données par ce fichier (${Object.keys(d.mois).length} mois) ?`)) return;
-    data = d; await repo.save(d); cur = Object.keys(d.mois).sort().pop() ?? moisCourant(); charger();
+    data = d; await repo.save(d); cur = Object.keys(d.mois).sort().pop() ?? moisCourant(); charger(); paiements();
   } catch (err) { alert('Import impossible : ' + (err as Error).message); }
   (e.target as HTMLInputElement).value = '';
 }
@@ -359,5 +373,19 @@ async function importer(e: Event) {
 (async () => {
   data = await repo.load();
   cur = Object.keys(data.mois).sort().pop() ?? moisCourant();
-  shell(); charger();
+  shell(); charger(); paiements();
+  if (location.hash === '#paiements') onglet('paie');
 })();
+
+function onglet(t: string) {
+  app.querySelectorAll<HTMLElement>('[data-tab]').forEach(b => b.setAttribute('aria-selected', String(b.dataset.tab === t)));
+  $('#v-compta').hidden = t !== 'compta'; $('#v-paie').hidden = t !== 'paie';
+  history.replaceState(null, '', t === 'paie' ? '#paiements' : '#');
+}
+
+function paiements() {
+  const rows = data.paiements ?? [];
+  const due = rows.reduce((s, p) => s + Math.max(0, p.total - p.paye), 0);
+  $('#tabdue').textContent = due ? '· ' + e0(due) : '';
+  renderPaiements($('#v-paie'), rows, nv => { data.paiements = nv; repo.save(data); paiements(); });
+}

@@ -16,7 +16,12 @@ La PWA exige HTTPS : déploie `dist/` sur un hébergement statique (Netlify Drop
 Attention : les données sont locales à l'appareil/navigateur. Exporte régulièrement le JSON.
 
 ## Régime
-Depuis janvier 2026 : **EI au réel** (BNC, déclaration contrôlée, IR). Les cotisations dépendent du bénéfice : l'app calcule des **provisions** (taux réglables), compare avec les prélèvements réels et fait le bilan de l'année (base de la 2035). Le régime et la date de passage se changent dans les réglages ; les mois d'avant sont calculés en micro. Guide complet dans l'app (carte « Guide : EI au réel »).
+Depuis janvier 2026 : **EI au réel** (BNC, déclaration contrôlée, IR). URSSAF 2026 régularisée et soldée ; mensualisation à partir de 2027 (montant saisi dans les réglages). Les cotisations dépendent du bénéfice : l'app calcule des **provisions** (29 % du bénéfice par défaut), compare avec les prélèvements réels et fait le bilan de l'année (base de la 2035). Le régime et la date de passage se changent dans les réglages ; les mois d'avant sont calculés en micro. Guide complet dans l'app (carte « Guide : EI au réel »).
+
+## Règles validées (12/11/2026)
+- Rétrocession SCM = 40 % du CA HT encaissé + TVA = 40 % de l'encaissé TTC. Autofacture `AF-AAAA-MM` numérotée par mois de règlement ; paiement par virement à partir de 2027.
+- TVA de la rétro : déduite une seule fois, ligne 20, sur la CA3 du mois de paiement (à partir de nov. 2026 ; nov. 2026 = 0 car AF-2026-11 a été déduite en octobre). CA3 avant le 16.
+- Identité (SIRET, APE, n° TVA, adresse) : saisie dans les réglages / le JSON, jamais dans ce dépôt public.
 
 ## Structure
 - `src/calc.ts` : formules micro (cahier §2) et réel (`calcReel`) · `src/regime.ts` : choix du régime par mois · `src/guide.ts` : guide · `tests/calc.test.ts`

@@ -36,8 +36,8 @@ export function ecartCA3(c: Calcul, ca3?: CA3): number | null {
 // ————————————————————————————————————————————————————————————————
 export interface Charge { libelle: string; ht: number; tva: number }
 export interface OptsReel { tauxSocial: number; tauxPAS: number }
-/** tauxSocial ≈ 40-45 % du bénéfice pour un indépendant (estimation, modifiable). tauxPAS = ton taux de prélèvement à la source. */
-export const REEL_DEFAUT: OptsReel = { tauxSocial: 0.43, tauxPAS: 0 };
+/** tauxSocial ≈ 29 % du bénéfice (estimation validée le 12/11/2026 : ≈ 6 800 € dus pour ≈ 23 300 € de bénéfice). tauxPAS = ton taux de prélèvement à la source. */
+export const REEL_DEFAUT: OptsReel = { tauxSocial: 0.29, tauxPAS: 0 };
 
 export interface CalculReel extends Calcul {
   mode: 'reel';
@@ -47,15 +47,19 @@ export interface CalculReel extends Calcul {
   provSocial: number; provImpot: number;        // à mettre de côté
 }
 
-export function calcReel(caTTC: number, retroTTC: number, charges: Charge[] = [], o: OptsReel = REEL_DEFAUT): CalculReel {
+/**
+ * retroDeducTTC : TTC de la rétro dont la TVA est déduite sur CETTE CA3 (ligne 20), c'est-à-dire la rétro
+ * PAYÉE ce mois-là (une seule fois). Par défaut = retroTTC du mois (méthode jan–oct 2026).
+ */
+export function calcReel(caTTC: number, retroTTC: number, charges: Charge[] = [], o: OptsReel = REEL_DEFAUT, retroDeducTTC = retroTTC): CalculReel {
   const a1 = Math.round(caTTC / 1.2);
   const tax08 = Math.round(a1 * 0.2);
-  const l20Retro = Math.round(retroTTC / 6);
+  const l20Retro = Math.round(retroDeducTTC / 6);
   const l20Autres = Math.round(charges.reduce((s, c) => s + (c.tva || 0), 0));
   const l20 = l20Retro + l20Autres;
   const tvaNette = tax08 - l20;
   const tvaPay = Math.max(0, tvaNette);
-  const retroHT = retroTTC - l20Retro;
+  const retroHT = retroTTC - Math.round(retroTTC / 6);
   const autresHT = charges.reduce((s, c) => s + (c.ht || 0), 0);
   const autresTTC = autresHT + charges.reduce((s, c) => s + (c.tva || 0), 0);
   const chargesHT = retroHT + autresHT;
@@ -68,4 +72,14 @@ export function calcReel(caTTC: number, retroTTC: number, charges: Charge[] = []
     retroHT, chargesHT, benefice, provSocial, provImpot,
     reste: caTTC - retroTTC - autresTTC - tvaPay - provSocial - provImpot,
   };
+}
+
+// ——— Rétrocession SCM (convention du 30/11/2023) ———
+/** 40 % du CA HT encaissé + TVA 20 % = 40 % du TTC encaissé (arrondi au centime). */
+export const retroDue = (caTTC: number) => Math.round(caTTC * 0.4 * 100) / 100;
+/** N° d'autofacture : numérotée par MOIS DE RÈGLEMENT (redevance de M payée en M+1). AF-2026-11 = redevance d'octobre. */
+export function numAF(moisRedevance: string): string {
+  const [a, m] = moisRedevance.split('-').map(Number);
+  const d = new Date(Date.UTC(a, m, 1)); // mois suivant
+  return `AF-${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
 }

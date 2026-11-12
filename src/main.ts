@@ -1,6 +1,6 @@
 import './style.css';
-import { ecartCA3, TAUX_2026, REEL_DEFAUT, type Taux, type CalculReel } from './calc';
-import { calculMois, estReel, regimeDe, REEL_DEPUIS_DEFAUT } from './regime';
+import { ecartCA3, TAUX_2026, REEL_DEFAUT, retroDue, numAF, type Taux, type CalculReel } from './calc';
+import { calculMois, estReel, regimeDe, REEL_DEPUIS_DEFAUT, infoUrssaf, retroDeductible, DEDUC_PAIEMENT_DEPUIS } from './regime';
 import { GUIDE } from './guide';
 import { renderPaiements } from './paiementsUI';
 import { normaliserPaiements } from './paiements';
@@ -33,7 +33,7 @@ const eur = (id: string, label: string, full = false) => fld(id, label, { eur: t
 const AIDE = {
   reel1: `<p>Au réel, <b>il n'y a plus de montant à déclarer chaque mois à l'URSSAF</b> : elle prélève seule selon un échéancier calculé sur tes revenus passés, puis régularise quand elle connaît ton vrai bénéfice (déclaration de revenus de mai-juin).</p>
     <p>L'app t'indique donc ce qu'il est <b>prudent de mettre de côté</b> : une provision sur ton <b>bénéfice estimé</b> (recettes HT − rétro HT − autres charges HT).</p>
-    <p><b>Provision sociale</b> : bénéfice × taux réglable (43 % par défaut). <b>Provision impôt</b> : (bénéfice − provision sociale) × ton taux de prélèvement à la source, à recopier depuis impots.gouv (Gérer mon prélèvement à la source) dans les réglages.</p>
+    <p><b>Provision sociale</b> : bénéfice × taux réglable (29 % par défaut, estimation validée le 12/11/2026). <b>Provision impôt</b> : (bénéfice − provision sociale) × ton taux de prélèvement à la source, à recopier depuis impots.gouv (Gérer mon prélèvement à la source) dans les réglages.</p>
     <p>Compare avec ce qui a été <b>réellement prélevé</b> (carte « Prélèvements du mois ») : la différence, c'est ce que tu devras probablement payer (ou récupérer) à la régularisation.</p>`,
   charges: `<p>Toutes tes <b>dépenses pro</b> du mois, hors rétrocession (déjà comptée) : matériel, assurance RC pro, formation, téléphone au prorata, frais bancaires, logiciel, comptable…</p>
     <p>Pour chaque facture : un <b>libellé</b>, le montant <b>HT</b> et la <b>TVA</b> indiquée sur la facture (0 si pas de TVA, ex. assurance).</p>
@@ -48,17 +48,19 @@ const AIDE = {
     <p>Estimation : seule la 2035 et le calcul de l'URSSAF font foi.</p>`,
   saisie: `<p><b>Mois de la redevance</b> : le mois <i>concerné</i> par la rétrocession, pas le mois où tu la paies. Redevance d'octobre payée en novembre → choisis octobre.</p>
     <p><b>Encaissé TTC</b> : tout ce que tes clients t'ont payé ce mois-ci, TTC : CB + chèques remis en banque + virements clients. <b>Jamais</b> tes virements perso vers le compte pro (ce sont des apports, pas des recettes).</p>
-    <p><b>Rétro TTC</b> : le montant TTC <i>réel</i> de l'autofacture de la SCM pour ce mois. C'est lui qui donne ta TVA déductible (TTC ÷ 6).</p>
+    <p><b>Rétro TTC</b> : le montant TTC <i>réel</i> de l'autofacture de la SCM pour ce mois = 40 % du CA HT encaissé + TVA, soit <b>40 % de l'encaissé TTC</b>. Sa TVA (TTC ÷ 6) se déduit sur la CA3 du mois où tu la <b>paies</b>, une seule fois.</p>
     <p><b>Référence</b> : le numéro de l'autofacture, AF-AAAA-MM, numérotée par <i>mois de règlement</i> (AF-2026-11 = redevance d'octobre payée en novembre).</p>`,
   urssaf: `<p>Où : <b>autoentrepreneur.urssaf.fr</b> → Déclarer et payer → déclaration mensuelle.</p>
     <p>Dans la case <b>« Prestations de services BNC »</b>, tape le grand montant ci-dessous (ton CA <b>HT</b> du mois, arrondi à l'euro). Laisse les autres cases à 0.</p>
     <p>L'URSSAF calcule seule : cotisations 25,6 % + versement libératoire de l'impôt 2,2 % + formation 0,2 %. Le total affiché ici doit correspondre à ce qu'elle te demande. Taux 2026 : à revérifier chaque 1<sup>er</sup> janvier.</p>`,
   ca3: `<p>Où : <b>impots.gouv.fr</b> → Espace professionnel → Déclarer la TVA → CA3 mensuelle (régime réel normal, TVA sur encaissements).</p>
     <p><b>A1</b> : ventes et prestations HT du mois. <b>Ligne 08</b> : la même base HT au taux de 20 %, avec la taxe calculée.</p>
-    <p><b>Ligne 20</b> : TVA déductible « autres biens et services » → <b>uniquement</b> la TVA de la facture de la piscine (pas la ligne 21).</p>
+    <p><b>Ligne 20</b> : TVA déductible « autres biens et services » → la TVA de la rétro <b>payée ce mois-ci</b> (depuis nov. 2026 : la redevance du mois précédent), <b>une seule fois</b>. Novembre 2026 : 0 €, car la TVA de AF-2026-11 (254,96 €) a déjà été déduite en octobre.</p>
+    <p>À déposer et payer <b>avant le 16</b> du mois suivant.</p>
     <p><b>TVA nette</b> : ce que tu paies. Si la TVA déductible dépasse la TVA collectée, c'est un crédit : rien à payer ce mois-ci.</p>`,
   retro: `<p>Ce que tu dois à la SCM pour la redevance du mois : le TTC de l'autofacture, ou le net à payer s'il y a une compensation.</p>
-    <p>Ajoute chaque chèque plus bas (n°, montant, date du chèque). L'état passe à <b>Réglé ✓</b> quand le total des chèques couvre le montant.</p>`,
+    <p>Montant dû = <b>40 % de l'encaissé TTC</b> du mois (40 % du CA HT + TVA). L'autofacture est numérotée par <b>mois de règlement</b>.</p>
+    <p>Ajoute chaque règlement plus bas. À partir de 2027 : <b>virement</b> (plus de chèques). L'état passe à <b>Réglé ✓</b> quand le total couvre le montant.</p>`,
   justif: `<p>Document <b>interne</b> qui prouve que tu as payé la rétrocession et quelle TVA tu as déduite. Ce n'est pas une facture.</p>
     <p>Télécharge le PDF et range-le avec l'autofacture du mois, au cas où l'administration te demande de justifier la ligne 20.</p>`,
   repart: `<p>Ce que devient l'argent encaissé ce mois-ci : la part de la SCM, la TVA à reverser, l'URSSAF (impôt compris grâce au versement libératoire), et ce qui reste.</p>
@@ -69,7 +71,8 @@ const AIDE = {
     <p><b>Écart positif</b> = tu as déclaré moins que le calcul. <b>Négatif</b> = plus. Laisse vide tant que la CA3 du mois n'est pas déposée.</p>`,
   hist: `<p>Un mois par ligne. <b>TVA payée</b> = celle de la CA3 si tu l'as saisie, sinon la TVA calculée.</p>
     <p><b>Écart CA3</b> = TVA calculée − TVA déclarée. Touche une ligne pour ouvrir ce mois.</p>`,
-  reglages: `<p><b>Payeur</b>, <b>structure</b> et <b>adresse</b> apparaissent sur le justificatif.</p>
+  reglages: `<p><b>Payeur</b>, <b>structure</b>, <b>adresse</b>, <b>SIRET</b> et <b>n° de TVA</b> apparaissent sur le justificatif.</p>
+    <p><b>Mensualité URSSAF</b> : à partir de janvier 2027, le montant prélevé chaque mois (après la modulation de janvier).</p>
     <p><b>Taux</b> : modifiables pour tester, mais pas enregistrés. À revérifier chaque 1<sup>er</sup> janvier sur urssaf.fr.</p>
     <p><b>Exporter JSON</b> = sauvegarde de toutes tes données (fais-le après chaque mois). <b>Importer JSON</b> remplace tout par le fichier choisi.</p>`,
 };
@@ -116,6 +119,10 @@ function shell() {
       ${fld('r_payeur', 'Payeur', { full: true, ph: 'Prénom Nom — Aquatic Shape EI' })}
       ${fld('r_struct', 'Structure (bénéficiaire)', { full: true })}
       ${fld('r_adr', 'Adresse de l\'EI', { full: true })}
+      ${fld('r_siret', 'SIRET', { ph: '924 244 049 00046' })}
+      ${fld('r_ape', 'Code APE', { ph: '8551Z' })}
+      ${fld('r_tva', 'N° TVA intracom', { full: true, ph: 'FR…' })}
+      ${eur('r_urs', 'Mensualité URSSAF (dès 2027)', true)}
     </div>
     <h3 class="sub">Régime</h3>
     <div class="grid">
@@ -137,7 +144,7 @@ function shell() {
   <div id="v-paie" hidden></div>`;
   app.querySelectorAll<HTMLElement>('[data-tab]').forEach(b => (b.onclick = () => onglet(b.dataset.tab!)));
   $('#mois').addEventListener('change', e => { cur = (e.target as HTMLInputElement).value || cur; charger(); });
-  for (const id of ['ca', 'retro', 'ref', 'comp', 'compObj', 'compNet', 'c_a1', 'c_t08', 'c_ded', 'c_lig', 'c_net', 'r_payeur', 'r_struct', 'r_adr', 't_c', 't_l', 't_f', 'r_social', 'r_pas'])
+  for (const id of ['ca', 'retro', 'ref', 'comp', 'compObj', 'compNet', 'c_a1', 'c_t08', 'c_ded', 'c_lig', 'c_net', 'r_payeur', 'r_struct', 'r_adr', 'r_siret', 'r_ape', 'r_tva', 'r_urs', 't_c', 't_l', 't_f', 'r_social', 'r_pas'])
     $('#' + id).addEventListener('input', lire);
   for (const id of ['r_regime', 'r_depuis']) $('#' + id).addEventListener('change', () => { lire(); charger(); });
   $('#addchq').onclick = () => { m().cheques.push({ num: '', montant: 0, date: '' }); save(); rendreCheques(); calculer(); };
@@ -166,6 +173,7 @@ function charger() {
   set('c_a1', c?.a1 ?? 0); set('c_t08', c?.tva08 ?? 0); set('c_ded', c?.deduc ?? 0); v('c_lig').value = c?.ligne ?? '20'; v('c_net').value = c ? String(c.net) : '';
   v('r_payeur').value = data.reglages.payeur ?? ''; v('r_struct').value = data.reglages.structure; v('r_adr').value = data.reglages.adresse;
   const R = data.reglages;
+  v('r_siret').value = R.siret ?? ''; v('r_ape').value = R.ape ?? ''; v('r_tva').value = R.tvaIntra ?? ''; set('r_urs', R.urssafMensuel ?? 0);
   v('r_regime').value = R.regime ?? 'reel'; v('r_depuis').value = R.reelDepuis || REEL_DEPUIS_DEFAUT;
   v('r_social').value = R.tauxSocial === undefined ? '' : String(+(R.tauxSocial * 100).toFixed(2));
   v('r_pas').value = R.tauxPAS === undefined ? '' : String(+(R.tauxPAS * 100).toFixed(2));
@@ -183,6 +191,7 @@ function lire() {
     x.ca3 = { a1: num(v('c_a1').value), tva08: num(v('c_t08').value), deduc: num(v('c_ded').value), ligne: v('c_lig').value.trim() === '21' ? '21' : '20', net: num(v('c_net').value) };
   const R = data.reglages;
   data.reglages.payeur = v('r_payeur').value; data.reglages.structure = v('r_struct').value; data.reglages.adresse = v('r_adr').value;
+  R.siret = v('r_siret').value.trim() || undefined; R.ape = v('r_ape').value.trim() || undefined; R.tvaIntra = v('r_tva').value.trim() || undefined; R.urssafMensuel = num(v('r_urs').value) || undefined;
   R.regime = v('r_regime').value as 'micro' | 'reel'; R.reelDepuis = v('r_depuis').value || REEL_DEPUIS_DEFAUT;
   if (v('r_social').value.trim()) R.tauxSocial = num(v('r_social').value) / 100; else delete R.tauxSocial;
   if (v('r_pas').value.trim()) R.tauxPAS = num(v('r_pas').value) / 100; else delete R.tauxPAS;
@@ -210,7 +219,7 @@ const code = (c: string) => `<span class="code">${c}</span>`;
 const kpi = (label: string, val: string, copy?: string, cls = '') => `<div class="kpi ${cls}"><div><small>${label}</small><strong>${val}</strong></div>${copy ? cp(copy) : ''}</div>`;
 
 function calculer() {
-  const x = m(); const c = calculMois(cur, x, data.reglages, taux);
+  const x = m(); const c = calculMois(cur, x, data.reglages, taux, data.mois);
   const reel = estReel(c);
   $('#chip').textContent = reel ? 'EI au réel · BNC · ' + libCourt(cur) : 'Micro-entreprise · ' + libCourt(cur);
   const regle = x.cheques.reduce((s, q) => s + q.montant, 0);
@@ -239,13 +248,16 @@ function calculer() {
     ${row(code('08') + 'Taxe', e0(c.tax08), String(c.tax08))}
     ${reel && c.l20Autres ? row(code('20') + 'dont piscine', e0(c.l20Retro)) + row(code('20') + 'dont autres achats', e0(c.l20Autres)) : ''}
     ${row(code('20') + 'TVA déductible', e0(c.l20), String(c.l20))}
+    ${reel && cur >= (data.reglages.deducPaiementDepuis || DEDUC_PAIEMENT_DEPUIS) ? `<div class="msg">Ligne 20 = TVA de la rétro <b>payée ce mois-ci</b>${cur === (data.reglages.deducPaiementDepuis || DEDUC_PAIEMENT_DEPUIS) ? ' : 0 € ce mois, la TVA de AF-2026-11 (254,96 €) a déjà été déduite en octobre' : ` (redevance du mois précédent, ${e2(retroDeductible(cur, x, data.mois, data.reglages))} TTC)`}. À déclarer avant le 16 du mois suivant.</div>` : ''}
     ${c.credit ? `<div class="msg warn">⚠ Crédit de TVA de ${e0(-c.tvaNette)} : rien à payer ce mois-ci.</div>` : ''}
     ${msgEcart}</section>
   <section class="card">${hd('3', 'Rétrocession à la SCM')}${aide(AIDE.retro)}
     ${kpi('À payer à la SCM', e2(aPayer))}
-    ${row('dont TVA récupérée', e0(reel ? c.l20Retro : c.l20))}
+    ${row('dont TVA (déduite au mois du paiement)', e0(Math.round(x.retroTTC / 6)))}
     ${x.compensation ? row('Compensation (matériel)', '− ' + e2(x.compensation.montant)) : ''}
     ${row('Référence', x.refFacture || '—')}
+    ${row(`Montant dû (40 % de l'encaissé TTC) · ${numAF(cur)}`, e2(retroDue(x.caTTC)))}
+    ${x.retroTTC && Math.abs(x.retroTTC - retroDue(x.caTTC)) > 0.05 ? `<div class="msg warn">La rétro saisie (${e2(x.retroTTC)}) diffère de 40 % de l'encaissé TTC (${e2(retroDue(x.caTTC))}).</div>` : ''}
     ${x.cheques.map(q => row(`Chèque ${q.num || '?'} · ${dateFr(q.date) || 'sans date'}`, e2(q.montant))).join('')}
     ${row('État', reste <= 0.005 ? '<span class="pill ok">Réglé ✓</span>' : `<span class="pill warn">Reste ${e2(reste)}</span>`)}</section>
   <section class="card">${hd('4', 'Justificatif de paiement')}${aide(AIDE.justif)}
@@ -265,7 +277,10 @@ function carteReel(c: CalculReel, x: Mois) {
   const prov = c.provSocial + c.provImpot;
   const preleve = (x.urssafPreleve ?? 0) + (x.pasPreleve ?? 0);
   const diff = prov - preleve;
+  const iu = infoUrssaf(cur, R);
   return `<section class="card">${hd('1', 'URSSAF & impôt')}${aide(AIDE.reel1)}
+    <div class="msg ${cur.startsWith('2026') ? 'ok' : ''}">${iu.texte}</div>
+    ${iu.mensuel ? row('Mensualité URSSAF', e2(iu.mensuel)) : ''}
     ${kpi('À mettre de côté ce mois (estimation)', e0(prov))}
     ${row('Recettes HT', e0(c.a1))}
     ${row('− Rétrocession HT', e0(c.retroHT))}
@@ -316,7 +331,7 @@ function bilan() {
   if (!ks.length) { $('#bilan').innerHTML = ''; return; }
   const T = { rec: 0, retro: 0, autres: 0, ben: 0, ps: 0, pu: 0, pi: 0, pp: 0, tva: 0 };
   for (const k of ks) {
-    const x = data.mois[k]; const c = calculMois(k, x, data.reglages, taux) as CalculReel;
+    const x = data.mois[k]; const c = calculMois(k, x, data.reglages, taux, data.mois) as CalculReel;
     T.rec += c.a1; T.retro += c.retroHT; T.autres += c.chargesHT - c.retroHT; T.ben += c.benefice;
     T.ps += c.provSocial; T.pi += c.provImpot; T.pu += x.urssafPreleve ?? 0; T.pp += x.pasPreleve ?? 0; T.tva += x.ca3 ? x.ca3.net : c.tvaPay;
   }
@@ -338,7 +353,7 @@ function historique() {
   const keys = Object.keys(data.mois).sort();
   const T = { ca: 0, a1: 0, tva: 0, urs: 0, ec: 0 };
   const lignes = keys.map(k => {
-    const x = data.mois[k]; const c = calculMois(k, x, data.reglages, taux);
+    const x = data.mois[k]; const c = calculMois(k, x, data.reglages, taux, data.mois);
     const tva = x.ca3 ? x.ca3.net : c.tvaPay; const ec = ecartCA3(c, x.ca3);
     T.ca += x.caTTC; T.a1 += c.a1; T.tva += tva; T.urs += c.urssaf; T.ec += ec ?? 0;
     return `<tr class="m ${k === cur ? 'sel' : ''}" data-m="${k}"><td>${libCourt(k)}${regimeDe(k, data.reglages) === 'micro' ? ' <span class="mut">µ</span>' : ''}</td><td>${e0(x.caTTC)}</td><td>${e0(c.a1)}</td><td>${e0(tva)}</td><td>${e0(c.urssaf)}</td><td class="${ec ? (ec > 0 ? 'warn' : 'ok') : ''}">${ec === null ? '—' : (ec > 0 ? '+' : '') + ec}</td></tr>`;

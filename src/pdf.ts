@@ -5,8 +5,9 @@ import { e2, libMois, dateFr } from './format';
 
 // Texte du justificatif (utilisé pour l'aperçu et le PDF). Pas d'IBAN.
 export function justificatifLignes(k: string, m: Mois, c: Calcul, r: Reglages): string[] {
-  const ht = m.retroTTC - ((c as any).l20Retro ?? c.l20);
-  const regl = m.cheques.map(q => `  Chèque n° ${q.num} — ${e2(q.montant)} — ${dateFr(q.date)}`);
+  const tvaRetro = Math.round(m.retroTTC / 6); // TVA de la facture piscine = TTC/6
+  const ht = m.retroTTC - tvaRetro;
+  const regl = m.cheques.map(q => `  Règlement n° ${q.num} — ${e2(q.montant)} — ${dateFr(q.date)}`);
   const totalRegl = m.cheques.reduce((s, q) => s + q.montant, 0);
   return [
     'JUSTIFICATIF DE PAIEMENT DE RÉTROCESSION',
@@ -14,20 +15,22 @@ export function justificatifLignes(k: string, m: Mois, c: Calcul, r: Reglages): 
     '',
     `Payeur : ${r.payeur || 'Aquatic Shape EI'}`,
     r.adresse ? `Adresse : ${r.adresse}` : '',
+    r.siret ? `SIRET : ${r.siret}${r.ape ? ` · APE ${r.ape}` : ''}` : '',
+    r.tvaIntra ? `N° TVA : ${r.tvaIntra}` : '',
     `Bénéficiaire : ${r.structure}`,
     `Période : redevance de ${libMois(k)}`,
     m.refFacture ? `Référence facture : ${m.refFacture}` : '',
     '',
     `Montant HT : ${e2(ht)}`,
-    `TVA : ${e2(((c as any).l20Retro ?? c.l20))}`,
+    `TVA : ${e2(tvaRetro)}`,
     `Montant TTC : ${e2(m.retroTTC)}`,
     '',
     'Règlements :',
     ...(regl.length ? regl : ['  (aucun règlement saisi)']),
     ...(m.compensation ? [`  Compensation — ${e2(m.compensation.montant)} — ${m.compensation.objet}`] : []),
-    `Total chèques : ${e2(totalRegl)}`,
+    `Total réglé : ${e2(totalRegl)}`,
     '',
-    `TVA déduite sur la CA3 : ${e2(((c as any).l20Retro ?? c.l20))} (ligne 20)`,
+    `TVA de cette rétro : ${e2(m.retroTTC - ht)}, déduite une seule fois (ligne 20) sur la CA3 du mois de paiement`,
   ].filter((l, i, a) => l !== '' || a[i - 1] !== '');
 }
 

@@ -6,7 +6,7 @@ const esc = (s: string) => s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;
 const AIDE = `<p>Le suivi des clientes qui règlent leur forfait <b>en plusieurs fois</b>. Montants en € <b>TTC</b>.</p>
   <p><b>+ Versement</b> : tape le montant reçu et valide. Il s'ajoute au « payé », la date est notée dans l'historique. Pense aussi à l'inclure dans ton <b>encaissé TTC</b> du mois (onglet Compta) : un versement est une recette du mois où tu le reçois.</p>
   <p><b>Séances ajoutées</b> : ce que tu as déjà crédité sur son compte Deciplus. « Couvertes » = ce que son paiement finance au prorata : tu peux ajouter des séances jusqu'à ce nombre.</p>
-  <p><b>Facture</b> : fais une facture par versement (montant TTC, TVA 20 % incluse), comme celle de 55 € de Hafida.</p>
+  <p><b>Facture</b> : fais une facture par versement (montant TTC, TVA 20 % incluse).</p>
   <p><b>Soldé</b> : quand le total est payé, la cliente passe dans « Tous ».</p>`;
 
 let filtre: 'open' | 'all' = 'open';

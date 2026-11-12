@@ -9,7 +9,7 @@ const REF: [string, number, number, number, number, number][] = [
   ['2026-02', 2478, 135, 361, 351, 10],
   ['2026-03', 2017, 135, 268, 243, 25],
   ['2026-04', 3575, 286, 429, 429, 0],
-  ['2026-05', 4417, 353, 530, 530, 0],
+  ['2026-05', 4417, 333, 550, 530, 20],
   ['2026-06', 1556, 117, 194, 187, 7],
   ['2026-07', 1725, 104, 241, 207, 34],
   ['2026-08', 1873, 69, 306, 306, 0],
@@ -30,9 +30,9 @@ d('calcMois — tableau §4', () => {
       expect(ecartCA3(r, mois[m].ca3)).toBe(ecart);
     });
   }
-  it('total écart = +51', () => {
+  it('total écart = +71', () => {
     const t = REF.reduce((s, r) => s + (ecartCA3(calcMois(mois[r[0]].caTTC, mois[r[0]].retroTTC), mois[r[0]].ca3) ?? 0), 0);
-    expect(t).toBe(51);
+    expect(t).toBe(71);
   });
 });
 

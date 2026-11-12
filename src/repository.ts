@@ -1,4 +1,5 @@
 import type { Donnees } from './types';
+import { normaliserPaiements } from './paiements';
 // seed.json (données perso, ignoré par git) est optionnel : présent en local, absent du dépôt public.
 const seeds = import.meta.glob('./seed.json', { eager: true, import: 'default' });
 const seed: any = Object.values(seeds)[0] ?? { mois: {}, reglages: { structure: '', adresse: '', payeur: '' } };
@@ -30,5 +31,5 @@ export function normaliser(x: any): Donnees {
       throw new Error(`Mois invalide : ${k}`);
     m.cheques ??= []; m.refFacture ??= '';
   }
-  return { mois: x.mois, reglages: x.reglages ?? { structure: '', adresse: '' } };
+  return { mois: x.mois, reglages: x.reglages ?? { structure: '', adresse: '' }, paiements: normaliserPaiements(x.paiements) };
 }

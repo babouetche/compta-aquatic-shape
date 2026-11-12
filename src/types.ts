@@ -1,4 +1,5 @@
 import type { CA3, Charge } from './calc';
+import type { Paiement } from './paiements';
 export interface Cheque { num: string; montant: number; date: string }
 export interface Mois {
   caTTC: number; retroTTC: number; refFacture: string; cheques: Cheque[];
@@ -16,4 +17,4 @@ export interface Reglages {
   tauxSocial?: number;         // estimation cotisations / bénéfice (0,43 par défaut)
   tauxPAS?: number;            // taux de prélèvement à la source (impots.gouv)
 }
-export interface Donnees { mois: Record<string, Mois>; reglages: Reglages }
+export interface Donnees { mois: Record<string, Mois>; reglages: Reglages; paiements?: Paiement[] }

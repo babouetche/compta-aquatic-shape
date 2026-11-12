@@ -145,3 +145,37 @@ table.cmp{width:100%;margin:6px 0 12px;font-size:.8rem;border-collapse:separate;
 table.cmp th,table.cmp td{white-space:normal;text-align:left;vertical-align:top;padding:8px 6px}
 table.cmp th{font-size:.68rem}
 table.cmp td:first-child{font-weight:700;color:var(--mut);width:22%}
+
+/* ——— Onglets ——— */
+.tabs{position:sticky;top:calc(env(safe-area-inset-top) + 8px);z-index:5;display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;margin:6px 0 4px;border-radius:16px;
+  background:var(--card);-webkit-backdrop-filter:blur(18px) saturate(1.4);backdrop-filter:blur(18px) saturate(1.4);border:1px solid var(--bd);box-shadow:var(--shadow)}
+.tabs button{background:transparent;color:var(--mut);border-radius:12px;padding:10px 8px;font:650 .92rem var(--disp)}
+.tabs button[aria-selected="true"]{background:linear-gradient(135deg,var(--acc2),var(--acc));color:#fff;box-shadow:0 6px 14px -8px var(--acc)}
+#tabdue{font-weight:500;opacity:.85}
+
+/* ——— Paiements échelonnés ——— */
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.stat{padding:12px;border-radius:14px;background:var(--in)}
+.stat small{display:block;font-size:.7rem;font-weight:700;letter-spacing:.03em;text-transform:uppercase;color:var(--mut)}
+.stat strong{display:block;margin-top:4px;font:800 1.2rem var(--disp)}
+.stat.due{background:var(--warns)}.stat.due strong{color:var(--warn)}
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;border-radius:12px;background:var(--in)}
+.seg button{background:transparent;color:var(--mut);padding:8px;border-radius:9px}
+.seg button[aria-pressed="true"]{background:var(--card);color:var(--fg);box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.cl{padding:16px}
+.cl-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+.cl .nom{font:700 1.05rem var(--disp)}
+.g{margin:8px 0}
+.gl{display:flex;justify-content:space-between;font-size:.85rem;color:var(--mut)}.gl b{color:var(--fg)}
+.gb{height:8px;margin-top:5px;border-radius:99px;background:var(--in);overflow:hidden}
+.gb i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--acc2),var(--acc))}
+.gb.money i{background:linear-gradient(90deg,#34d399,var(--ok))}
+.cl-act{display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:12px}
+.cl-act input{height:44px}
+.cl-act button{padding:0 14px;height:44px}
+.cl-act>button:not(.pri){grid-column:auto}
+.cl-act button[data-s],.cl-act button[data-h]{grid-column:span 1}
+.cl-det{margin-top:12px;padding-top:12px;border-top:1px solid var(--bd)}
+.meta{margin:10px 0 0;font-size:.75rem}
+.empty{text-align:center;color:var(--mut)}
+button.warn{color:var(--warn)}

@@ -2,6 +2,7 @@ import { jsPDF } from 'jspdf';
 import type { Calcul } from './calc';
 import type { Mois, Reglages } from './types';
 import { e2, libMois, dateFr } from './format';
+import { pdfTxt } from './pdfFacture';
 
 // Texte du justificatif (utilisé pour l'aperçu et le PDF). Pas d'IBAN.
 export function justificatifLignes(k: string, m: Mois, c: Calcul, r: Reglages): string[] {
@@ -39,7 +40,7 @@ export function telechargerPDF(k: string, m: Mois, c: Calcul, r: Reglages) {
   let y = 22;
   justificatifLignes(k, m, c, r).forEach((l, i) => {
     doc.setFont('helvetica', i === 0 ? 'bold' : 'normal').setFontSize(i === 0 ? 15 : 11);
-    doc.text(l, 20, y); y += i === 0 ? 8 : 6.5;
+    doc.text(pdfTxt(l), 20, y); y += i === 0 ? 8 : 6.5;
   });
   doc.save(`justificatif-retrocession-${k}.pdf`);
 }

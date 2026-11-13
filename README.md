@@ -15,6 +15,12 @@ Dépôt public : aucune donnée perso. En local, un `src/seed.json` (ignoré par
 La PWA exige HTTPS : déploie `dist/` sur un hébergement statique (Netlify Drop, Cloudflare Pages, GitHub Pages), ouvre l'URL dans **Safari** → Partager → **Sur l'écran d'accueil**.
 Attention : les données sont locales à l'appareil/navigateur. Exporte régulièrement le JSON.
 
+## Onglets
+- **Mois** : saisie du mois, URSSAF/impôt, CA3, rétrocession, justificatif, répartition.
+- **Paiements** : forfaits en plusieurs fois, versements datés avec moyen de paiement (CB, chèque, espèces, virement) et n° de chèque, encaissé du mois par moyen.
+- **Factures** : création en quelques taps (prestations prédéfinies, prix TTC → HT/TVA), facture acquittée depuis un versement, PDF et partage iOS, numérotation AAAAMM-N.
+- **Année** : bilan au réel et historique. **Plus** : sauvegarde, guide, réglages.
+
 ## Régime
 Depuis janvier 2026 : **EI au réel** (BNC, déclaration contrôlée, IR). URSSAF 2026 régularisée et soldée ; mensualisation à partir de 2027 (montant saisi dans les réglages). Les cotisations dépendent du bénéfice : l'app calcule des **provisions** (29 % du bénéfice par défaut), compare avec les prélèvements réels et fait le bilan de l'année (base de la 2035). Le régime et la date de passage se changent dans les réglages ; les mois d'avant sont calculés en micro. Guide complet dans l'app (carte « Guide : EI au réel »).
 

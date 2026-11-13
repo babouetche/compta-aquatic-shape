@@ -1,12 +1,15 @@
 import './style.css';
+import './style2.css';
 import { ecartCA3, TAUX_2026, REEL_DEFAUT, retroDue, numAF, type Taux, type CalculReel } from './calc';
 import { calculMois, estReel, regimeDe, REEL_DEPUIS_DEFAUT, infoUrssaf, retroDeductible, DEDUC_PAIEMENT_DEPUIS } from './regime';
 import { GUIDE } from './guide';
 import { renderPaiements } from './paiementsUI';
-import { normaliserPaiements } from './paiements';
+import { normaliserPaiements, resume, encaisseDuMois, rangVersement, MOYENS_COURTS, type Moyen } from './paiements';
+import { renderFactures, ouvrirBrouillon, ouvrirFacture } from './facturesUI';
+import { nouvelleFacture } from './factures';
 import { LocalRepository, normaliser, type Repository } from './repository';
 import type { Donnees, Mois } from './types';
-import { e0, e2, libCourt, dateFr } from './format';
+import { e0, e2, libCourt, libMois, dateFr } from './format';
 import { justificatifLignes, telechargerPDF } from './pdf';
 
 const repo: Repository = new LocalRepository();
@@ -77,25 +80,39 @@ const AIDE = {
     <p><b>Exporter JSON</b> = sauvegarde de toutes tes données (fais-le après chaque mois). <b>Importer JSON</b> remplace tout par le fichier choisi.</p>`,
 };
 
+const ICONES: Record<string, string> = {
+  mois: '<path d="M4 7h16M4 7v12h16V7M4 7V5h16v2M8 3v4M16 3v4M8 12h3M8 16h6"/>',
+  paie: '<path d="M3 7h15a3 3 0 0 1 3 3v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Zm0 0 12-3v3M16 13h2"/>',
+  fact: '<path d="M6 3h9l4 4v14H6zM15 3v4h4M9 12h7M9 16h5"/>',
+  annee: '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
+  plus: '<path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8Zm8.5 4-1.8-.6.3-1.9-1.6-1.1-1.6 1-1.4-1.3.5-1.8-1.9-.7L12 3.5l-1.1 1.6-1.9.7.5 1.8-1.4 1.3-1.6-1-1.6 1.1.3 1.9-1.8.6v2l1.8.6-.3 1.9 1.6 1.1 1.6-1 1.4 1.3-.5 1.8 1.9.7 1.1 1.6 1.1-1.6 1.9-.7-.5-1.8 1.4-1.3 1.6 1 1.6-1.1-.3-1.9 1.8-.6z"/>',
+};
+const ONGLETS: [string, string][] = [['mois', 'Mois'], ['paie', 'Paiements'], ['fact', 'Factures'], ['annee', 'Année'], ['plus', 'Plus']];
+const svg = (k: string) => `<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ICONES[k]}</svg>`;
+
 function shell() {
   app.innerHTML = `
-  <header class="brand"><img src="./logo.png" alt="Aquatic Shape Chartrons" width="899" height="280"><h1>Comptabilité</h1><p class="tag">Mon mois en quelques chiffres</p><p><span class="chip" id="chip"></span></p></header>
-  <nav class="tabs" role="tablist"><button role="tab" data-tab="compta" aria-selected="true">Compta du mois</button><button role="tab" data-tab="paie" aria-selected="false">Paiements <span id="tabdue"></span></button></nav>
-  <div id="v-compta">
-  <section class="card guide">${hd('i', 'Guide : EI au réel')}<p class="mut" style="margin:-4px 0 12px">Ce qui change, ce que tu fais chaque mois, ton calendrier, tes options. Touche une ligne pour la déplier.</p>${GUIDE}</section>
+  <div id="v-mois" class="view">
+  <header class="brand"><img src="./logo.png" alt="Aquatic Shape Chartrons" width="899" height="280"><h1>Comptabilité</h1><p class="tag">Mon mois en quelques chiffres</p></header>
+  <div class="mnav">
+    <button id="m-prev" aria-label="Mois précédent">‹</button>
+    <label class="mnav-c"><span id="m-lib"></span><input id="mois" type="month" aria-label="Mois de la redevance"></label>
+    <button id="m-next" aria-label="Mois suivant">›</button>
+  </div>
+  <p class="chip-l"><span class="chip" id="chip"></span></p>
   <section class="card">${hd('€', 'Mon mois')}${aide(AIDE.saisie)}
     <div class="grid">
-      ${fld('mois', 'Mois de la redevance', { type: 'month', full: true })}
       ${eur('ca', 'Encaissé TTC')}
       ${eur('retro', 'Rétro TTC')}
       ${fld('ref', 'Référence autofacture', { full: true, ph: 'AF-2026-11' })}
     </div>
+    <div id="enc-hint"></div>
   </section>
   <div id="res"></div>
   <div id="reel"></div>
-  <section class="card">${hd('✓', 'Chèques de rétrocession', true)}${aide(AIDE.cheques)}
+  <section class="card">${hd('✓', 'Règlements de la rétrocession', true)}${aide(AIDE.cheques)}
     <div id="chq"></div>
-    <button id="addchq" style="width:100%">+ Ajouter un chèque</button>
+    <button id="addchq" style="width:100%">+ Ajouter un règlement</button>
     <div class="grid" style="margin-top:16px">
       ${eur('comp', 'Compensation')}
       ${eur('compNet', 'Net à payer')}
@@ -112,37 +129,57 @@ function shell() {
     </div>
     <div class="actions"><button class="ghost" id="c_clear">Effacer la CA3 de ce mois</button></div>
   </section>
-  <div id="bilan"></div>
-  <div id="hist"></div>
-  <section class="card">${hd('⚙', 'Données & réglages', true)}${aide(AIDE.reglages)}
-    <div class="grid">
-      ${fld('r_payeur', 'Payeur', { full: true, ph: 'Prénom Nom — Aquatic Shape EI' })}
-      ${fld('r_struct', 'Structure (bénéficiaire)', { full: true })}
-      ${fld('r_adr', 'Adresse de l\'EI', { full: true })}
-      ${fld('r_siret', 'SIRET', { ph: '924 244 049 00046' })}
-      ${fld('r_ape', 'Code APE', { ph: '8551Z' })}
-      ${fld('r_tva', 'N° TVA intracom', { full: true, ph: 'FR…' })}
-      ${eur('r_urs', 'Mensualité URSSAF (dès 2027)', true)}
-    </div>
-    <h3 class="sub">Régime</h3>
-    <div class="grid">
-      <label class="f"><span>Régime fiscal</span><div><select id="r_regime"><option value="reel">EI au réel (2035)</option><option value="micro">Micro-entreprise</option></select></div></label>
-      ${fld('r_depuis', 'Au réel depuis', { type: 'month' })}
-      ${fld('r_social', 'Provision sociale %', { mode: 'decimal', ph: '43' })}
-      ${fld('r_pas', 'Taux PAS %', { mode: 'decimal', ph: '0' })}
-    </div>
-    <h3 class="sub">Taux micro (mois avant le réel)</h3>
-    <div class="grid grid3">
-      ${fld('t_c', 'Cotis. %', { mode: 'decimal' })}
-      ${fld('t_l', 'Vers. lib. %', { mode: 'decimal' })}
-      ${fld('t_f', 'Formation %', { mode: 'decimal' })}
-    </div>
-    <div class="actions"><button id="exp">Exporter JSON</button><button id="imp">Importer JSON</button>
-    <input id="file" type="file" accept="application/json" hidden></div>
-  </section>
   </div>
-  <div id="v-paie" hidden></div>`;
+
+  <div id="v-paie" class="view" hidden></div>
+  <div id="v-fact" class="view" hidden></div>
+
+  <div id="v-annee" class="view" hidden>
+    <header class="vt"><h1>Mon année</h1><p>Bilan, historique et écarts de TVA</p></header>
+    <div id="bilan"></div>
+    <div id="hist"></div>
+  </div>
+
+  <div id="v-plus" class="view" hidden>
+    <header class="vt"><h1>Plus</h1><p>Guide, réglages et sauvegarde</p></header>
+    <section class="card">${hd('⇅', 'Sauvegarde', true)}
+      <p class="mut" style="margin:0 0 4px">Tes données restent sur cet appareil. Exporte après chaque mois et range le fichier dans ton Drive.</p>
+      <div class="actions"><button class="pri" id="exp">Exporter JSON</button><button id="imp">Importer JSON</button>
+      <input id="file" type="file" accept="application/json" hidden></div>
+    </section>
+    <section class="card guide">${hd('i', 'Guide : EI au réel')}<p class="mut" style="margin:-4px 0 12px">Ce qui change, ce que tu fais chaque mois, ton calendrier, tes options.</p>${GUIDE}</section>
+    <section class="card">${hd('⚙', 'Réglages', true)}${aide(AIDE.reglages)}
+      <h3 class="sub" style="margin-top:0">Identité (justificatif et factures)</h3>
+      <div class="grid">
+        ${fld('r_payeur', 'Nom (sans « EI »)', { full: true, ph: 'Prénom Nom' })}
+        ${fld('r_adr', 'Adresse de l\'EI', { full: true })}
+        ${fld('r_siret', 'SIRET', { ph: '14 chiffres' })}
+        ${fld('r_ape', 'Code APE', { ph: '8551Z' })}
+        ${fld('r_tva', 'N° TVA intracom', { full: true, ph: 'FR…' })}
+        ${fld('r_struct', 'Structure (bénéficiaire de la rétro)', { full: true })}
+      </div>
+      <h3 class="sub">Régime</h3>
+      <div class="grid">
+        <label class="f"><span>Régime fiscal</span><div><select id="r_regime"><option value="reel">EI au réel (2035)</option><option value="micro">Micro-entreprise</option></select></div></label>
+        ${fld('r_depuis', 'Au réel depuis', { type: 'month' })}
+        ${fld('r_social', 'Provision sociale %', { mode: 'decimal', ph: '29' })}
+        ${fld('r_pas', 'Taux PAS %', { mode: 'decimal', ph: '0' })}
+        ${eur('r_urs', 'Mensualité URSSAF (dès 2027)', true)}
+      </div>
+      <h3 class="sub">Taux micro (mois avant le réel)</h3>
+      <div class="grid grid3">
+        ${fld('t_c', 'Cotis. %', { mode: 'decimal' })}
+        ${fld('t_l', 'Vers. lib. %', { mode: 'decimal' })}
+        ${fld('t_f', 'Formation %', { mode: 'decimal' })}
+      </div>
+    </section>
+  </div>
+
+  <nav class="tabbar" aria-label="Sections">${ONGLETS.map(([k, l]) => `<button data-tab="${k}" aria-selected="${k === 'mois'}">${svg(k)}<span>${l}</span>${k === 'paie' ? '<i id="tabdue"></i>' : ''}</button>`).join('')}</nav>`;
   app.querySelectorAll<HTMLElement>('[data-tab]').forEach(b => (b.onclick = () => onglet(b.dataset.tab!)));
+  const decale = (d: number) => { const [y, mm] = cur.split('-').map(Number); const t = new Date(y, mm - 1 + d, 1); cur = `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}`; charger(); };
+  $('#m-prev').onclick = () => decale(-1);
+  $('#m-next').onclick = () => decale(1);
   $('#mois').addEventListener('change', e => { cur = (e.target as HTMLInputElement).value || cur; charger(); });
   for (const id of ['ca', 'retro', 'ref', 'comp', 'compObj', 'compNet', 'c_a1', 'c_t08', 'c_ded', 'c_lig', 'c_net', 'r_payeur', 'r_struct', 'r_adr', 'r_siret', 'r_ape', 'r_tva', 'r_urs', 't_c', 't_l', 't_f', 'r_social', 'r_pas'])
     $('#' + id).addEventListener('input', lire);
@@ -157,7 +194,7 @@ function shell() {
     const c = t.closest<HTMLElement>('[data-copy]');
     if (c) { navigator.clipboard?.writeText(c.dataset.copy!); c.textContent = 'Copié ✓'; setTimeout(() => (c.textContent = 'Copier'), 1200); }
     const tr = t.closest<HTMLElement>('tr[data-m]');
-    if (tr) { cur = tr.dataset.m!; charger(); scrollTo({ top: 0, behavior: 'smooth' }); }
+    if (tr) { cur = tr.dataset.m!; charger(); onglet('mois'); }
   });
 }
 
@@ -166,7 +203,7 @@ const set = (id: string, x: string | number) => (v(id).value = x === 0 ? '' : St
 
 function charger() {
   const x = m();
-  v('mois').value = cur;
+  v('mois').value = cur; $('#m-lib').textContent = libMois(cur);
   set('ca', x.caTTC); set('retro', x.retroTTC); v('ref').value = x.refFacture;
   set('comp', x.compensation?.montant ?? 0); v('compObj').value = x.compensation?.objet ?? ''; set('compNet', x.compensation?.netAPayer ?? 0);
   const c = x.ca3;
@@ -178,7 +215,7 @@ function charger() {
   v('r_social').value = R.tauxSocial === undefined ? '' : String(+(R.tauxSocial * 100).toFixed(2));
   v('r_pas').value = R.tauxPAS === undefined ? '' : String(+(R.tauxPAS * 100).toFixed(2));
   set('t_c', +(taux.cotisations * 100).toFixed(2)); set('t_l', +(taux.liberatoire * 100).toFixed(2)); set('t_f', +(taux.formation * 100).toFixed(2));
-  rendreCheques(); rendreReel(); calculer();
+  rendreCheques(); rendreReel(); calculer(); majEncaisse();
 }
 
 function lire() {
@@ -201,10 +238,10 @@ function lire() {
 
 function rendreCheques() {
   $('#chq').innerHTML = m().cheques.map((q, i) => `<div class="chq">
-    <input class="num" data-i="${i}" data-f="num" placeholder="N° chèque" inputmode="numeric" value="${q.num}">
+    <input class="num" data-i="${i}" data-f="num" placeholder="N° chèque / virement" inputmode="numeric" value="${q.num}">
     <div class="mt eur"><input data-i="${i}" data-f="montant" inputmode="decimal" placeholder="Montant" value="${q.montant || ''}"></div>
     <input class="date" data-i="${i}" data-f="date" type="date" value="${q.date}">
-    <button data-del="${i}" aria-label="Supprimer">✕</button></div>`).join('') || '<p class="mut" style="margin:0 0 10px">Aucun chèque pour ce mois.</p>';
+    <button data-del="${i}" aria-label="Supprimer">✕</button></div>`).join('') || '<p class="mut" style="margin:0 0 10px">Aucun règlement saisi pour ce mois.</p>';
   $('#chq').querySelectorAll<HTMLInputElement>('input').forEach(el => el.addEventListener('input', () => {
     const q = m().cheques[+el.dataset.i!]; const f = el.dataset.f!;
     if (f === 'montant') q.montant = num(el.value); else (q as any)[f] = el.value;
@@ -375,12 +412,12 @@ async function importer(e: Event) {
     if (Array.isArray(j)) {
       const ps = normaliserPaiements(j);
       if (!confirm(`Remplacer le suivi des paiements par ce fichier (${ps.length} clientes) ? La compta n'est pas touchée.`)) return;
-      data.paiements = ps; await repo.save(data); paiements(); onglet('paie');
+      data.paiements = ps; await repo.save(data); paiements(); majEncaisse(); onglet('paie');
       (e.target as HTMLInputElement).value = ''; return;
     }
     const d = normaliser(j);
     if (!confirm(`Remplacer toutes les données par ce fichier (${Object.keys(d.mois).length} mois) ?`)) return;
-    data = d; await repo.save(d); cur = Object.keys(d.mois).sort().pop() ?? moisCourant(); charger(); paiements();
+    data = d; await repo.save(d); cur = Object.keys(d.mois).sort().pop() ?? moisCourant(); charger(); paiements(); factures();
   } catch (err) { alert('Import impossible : ' + (err as Error).message); }
   (e.target as HTMLInputElement).value = '';
 }
@@ -388,19 +425,63 @@ async function importer(e: Event) {
 (async () => {
   data = await repo.load();
   cur = Object.keys(data.mois).sort().pop() ?? moisCourant();
-  shell(); charger(); paiements();
-  if (location.hash === '#paiements') onglet('paie');
+  shell(); charger(); paiements(); factures();
+  const h = location.hash.slice(1); const t = ({ paiements: 'paie', factures: 'fact', annee: 'annee', plus: 'plus' } as Record<string, string>)[h];
+  if (t) onglet(t);
 })();
 
+const HASH: Record<string, string> = { mois: '', paie: 'paiements', fact: 'factures', annee: 'annee', plus: 'plus' };
 function onglet(t: string) {
   app.querySelectorAll<HTMLElement>('[data-tab]').forEach(b => b.setAttribute('aria-selected', String(b.dataset.tab === t)));
-  $('#v-compta').hidden = t !== 'compta'; $('#v-paie').hidden = t !== 'paie';
-  history.replaceState(null, '', t === 'paie' ? '#paiements' : '#');
+  for (const k of Object.keys(HASH)) $('#v-' + k).hidden = k !== t;
+  if (t === 'fact') factures();
+  if (t === 'paie') paiements();
+  history.replaceState(null, '', HASH[t] ? '#' + HASH[t] : location.pathname);
+  scrollTo(0, 0);
 }
 
 function paiements() {
   const rows = data.paiements ?? [];
-  const due = rows.reduce((s, p) => s + Math.max(0, p.total - p.paye), 0);
-  $('#tabdue').textContent = due ? '· ' + e0(due) : '';
-  renderPaiements($('#v-paie'), rows, nv => { data.paiements = nv; repo.save(data); paiements(); });
+  const due = resume(rows).due;
+  $('#tabdue').textContent = due ? e0(due).replace(/\s?€/, '') : '';
+  $('#tabdue').hidden = !due;
+  renderPaiements($('#v-paie'), {
+    rows,
+    commit: nv => { data.paiements = nv; repo.save(data); paiements(); majEncaisse(); },
+    facturer: (pid, vid) => {
+      const p = rows.find(x => x.id === pid)!; const v = p.versements.find(x => x.id === vid)!;
+      const forfait = p.formule || `Forfait ${p.seancesTotal} séances d'aqua`;
+      const total = p.total ? ` (forfait de ${e2(p.total)} TTC réglé en plusieurs fois)` : '';
+      ouvrirBrouillon(nouvelleFacture(data.factures ?? [], {
+        client: { nom: p.nom, email: p.email },
+        lignes: [{ designation: `${forfait} — ${rangVersement(p, v.id)}e versement${total}`, qte: 1, puTTC: v.montant }],
+        acquittee: { date: v.date, moyen: v.moyen, ref: v.ref },
+        lien: { paiementId: p.id, versementId: v.id },
+      }, data.reglages.factureProchain));
+      onglet('fact');
+    },
+    voirFacture: id => { ouvrirFacture(id); onglet('fact'); },
+    numeroFacture: id => data.factures?.find(f => f.id === id)?.numero,
+  });
+}
+
+function factures() {
+  renderFactures($('#v-fact'), {
+    get factures() { return data.factures ?? []; },
+    get reglages() { return data.reglages; },
+    get paiements() { return data.paiements ?? []; },
+    commit: fs => { data.factures = fs; repo.save(data); },
+    commitReglages: () => repo.save(data),
+    lierVersement: (pid, vid, fid) => {
+      data.paiements = (data.paiements ?? []).map(p => (p.id !== pid ? p : { ...p, versements: p.versements.map(v => (v.id === vid ? { ...v, factureId: fid } : v)) }));
+      repo.save(data); paiements();
+    },
+  });
+}
+
+/** Encart « versements reçus ce mois » sous la saisie du mois. */
+function majEncaisse() {
+  const box = $('#enc-hint'); if (!box) return;
+  const e = encaisseDuMois(data.paiements ?? [], cur);
+  box.innerHTML = e.total ? `<div class="msg"><b>${e2(e.total)}</b> de versements échelonnés reçus en ${libMois(cur)} (${(Object.keys(e.parMoyen) as Moyen[]).map(k => `${MOYENS_COURTS[k]} ${e2(e.parMoyen[k]!)}`).join(' · ')}) : ils font partie de l'encaissé TTC.</div>` : '';
 }

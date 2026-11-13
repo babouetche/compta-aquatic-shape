@@ -1,5 +1,6 @@
 import type { Donnees } from './types';
 import { normaliserPaiements } from './paiements';
+import { normaliserFactures } from './factures';
 // seed.json (données perso, ignoré par git) est optionnel : présent en local, absent du dépôt public.
 const seeds = import.meta.glob('./seed.json', { eager: true, import: 'default' });
 const seed: any = Object.values(seeds)[0] ?? { mois: {}, reglages: { structure: '', adresse: '', payeur: '' } };
@@ -15,7 +16,7 @@ const KEY = 'compta-aquatic-shape/v1';
 export class LocalRepository implements Repository {
   async load(): Promise<Donnees> {
     const raw = localStorage.getItem(KEY);
-    if (raw) return JSON.parse(raw) as Donnees;
+    if (raw) return normaliser(JSON.parse(raw)); // migre les anciens formats (paiements sans versements datés)
     const d = normaliser(seed); // premier lancement : import du JSON fourni
     await this.save(d);
     return d;
@@ -31,5 +32,5 @@ export function normaliser(x: any): Donnees {
       throw new Error(`Mois invalide : ${k}`);
     m.cheques ??= []; m.refFacture ??= '';
   }
-  return { mois: x.mois, reglages: x.reglages ?? { structure: '', adresse: '' }, paiements: normaliserPaiements(x.paiements) };
+  return { mois: x.mois, reglages: x.reglages ?? { structure: '', adresse: '' }, paiements: normaliserPaiements(x.paiements), factures: normaliserFactures(x.factures) };
 }

@@ -1,5 +1,6 @@
 import type { CA3, Charge } from './calc';
 import type { Paiement } from './paiements';
+import type { Facture, Prestation } from './factures';
 export interface Cheque { num: string; montant: number; date: string }
 export interface Mois {
   caTTC: number; retroTTC: number; refFacture: string; cheques: Cheque[];
@@ -18,6 +19,11 @@ export interface Reglages {
   tauxPAS?: number;            // taux de prélèvement à la source (impots.gouv)
   siret?: string; ape?: string; tvaIntra?: string; // identité de l'EI (dans le JSON, jamais dans le dépôt)
   urssafMensuel?: number;      // mensualité URSSAF à partir de 2027 (après modulation en janvier)
+  // Factures
+  nomCommercial?: string;      // « Aquatic Shape »
+  emailPro?: string; telPro?: string;
+  factureProchain?: number;    // n° de la prochaine facture (suffixe après AAAAMM-)
+  prestations?: Prestation[];  // prestations proposées en un tap
   deducPaiementDepuis?: string; // YYYY-MM, défaut 2026-11 : TVA de la rétro déduite au mois de paiement
 }
-export interface Donnees { mois: Record<string, Mois>; reglages: Reglages; paiements?: Paiement[] }
+export interface Donnees { mois: Record<string, Mois>; reglages: Reglages; paiements?: Paiement[]; factures?: Facture[] }
